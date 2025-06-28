@@ -1,16 +1,17 @@
 import { defineConfig } from 'vite';
-import path from 'path';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
-    https: true, // Required for WebXR
-    host: true,
+    https: true,
+    host: '0.0.0.0',
     port: 3000,
+    cors: true,
   },
   build: {
     target: 'es2020',
