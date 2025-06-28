@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Framerly AR Engine - QR Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .url {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            border: 1px solid #ddd;
+        }
+        .instructions {
+            color: #666;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+        .qr-container {
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Framerly AR Engine</h1>
+        
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+        
+        <div class="url">
+            <strong>URL:</strong> https://192.168.1.174:3000
+        </div>
+        
+        <div class="instructions">
+            <p><strong>📱 Instructions:</strong></p>
+            <ol style="text-align: left; max-width: 300px; margin: 0 auto;">
+                <li>Make sure your phone is on the same WiFi network</li>
+                <li>Scan the QR code above or manually enter the URL</li>
+                <li>Accept the SSL certificate warning (Advanced → Proceed)</li>
+                <li>Grant camera permissions when prompted</li>
+                <li>Point camera at a wall and tap to place AR objects!</li>
+            </ol>
+            
+            <p style="margin-top: 20px;">
+                <strong>🎮 Features:</strong><br>
+                • Switch between Frame Mode and Neon Mode<br>
+                • Tap walls to place realistic frames or glowing neon signs<br>
+                • AI-powered recommendations for styles and colors
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        // Generate QR code
+        QRCode.toCanvas(document.getElementById('qrcode'), 'https://192.168.1.174:3000', {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function (error) {
+            if (error) {
+                console.error(error);
+                document.getElementById('qrcode').innerHTML = '<p>QR Code generation failed. Please use the URL manually.</p>';
+            }
+        });
+    </script>
+</body>
+</html> 
