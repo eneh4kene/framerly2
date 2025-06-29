@@ -24,7 +24,10 @@ export class PlaneTracker {
    * Check WebXR support capabilities
    */
   static async checkWebXRSupport(): Promise<WebXRSupport> {
+    console.log('Checking WebXR support...');
+    
     if (!navigator.xr) {
+      console.log('navigator.xr not available');
       return {
         supported: false,
         immersiveAr: false,
@@ -35,20 +38,35 @@ export class PlaneTracker {
     }
 
     try {
-      // Only check basic session support, don't create actual sessions
+      console.log('navigator.xr is available, checking immersive-ar support...');
+      
+      // Check if immersive-ar is supported
       const immersiveAr = await navigator.xr.isSessionSupported('immersive-ar');
+      console.log('immersive-ar supported:', immersiveAr);
+      
+      if (!immersiveAr) {
+        console.log('immersive-ar not supported, but WebXR is available');
+        return {
+          supported: true,
+          immersiveAr: false,
+          hitTest: false,
+          planeDetection: false,
+          anchors: false
+        };
+      }
       
       return {
         supported: true,
-        immersiveAr,
-        hitTest: immersiveAr, // Assume hit-test is available if AR is supported
-        planeDetection: immersiveAr, // Assume plane detection is available if AR is supported
+        immersiveAr: true,
+        hitTest: true, // Assume hit-test is available if AR is supported
+        planeDetection: true, // Assume plane detection is available if AR is supported
         anchors: false // Anchors are optional and not critical
       };
     } catch (error) {
-      console.warn('Error checking WebXR support:', error);
+      console.error('Error checking WebXR support:', error);
+      console.log('WebXR available but session check failed');
       return {
-        supported: false,
+        supported: true, // WebXR is present, but might need user interaction
         immersiveAr: false,
         hitTest: false,
         planeDetection: false,

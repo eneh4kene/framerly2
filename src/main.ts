@@ -30,11 +30,19 @@ async function init() {
   try {
     showLoading('Checking AR support...');
     
-    // Check WebXR support
+    // Check WebXR support with detailed logging
     const support = await FramerlyAREngine.checkSupport();
+    console.log('WebXR Support Check Results:', support);
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Navigator XR:', !!navigator.xr);
     
-    if (!support.supported || !support.immersiveAr) {
-      throw new Error('WebXR AR is not supported on this device');
+    if (!support.supported) {
+      throw new Error('Browser does not support WebXR');
+    }
+    
+    if (!support.immersiveAr) {
+      console.log('Initial support check failed, but trying AR initialization anyway...');
+      // Don't throw error immediately - try initialization first
     }
 
     showLoading('Initializing AR engine...');
@@ -45,7 +53,8 @@ async function init() {
     // Setup AR engine callbacks
     setupAREngineCallbacks();
     
-    // Initialize the engine
+    // Try to initialize - this will throw if AR really isn't supported
+    showLoading('Requesting camera permissions...');
     await arEngine.initialize();
     
     showLoading('Starting AR session...');
@@ -61,7 +70,16 @@ async function init() {
     
   } catch (error) {
     console.error('AR initialization failed:', error);
-    showError(`AR not available: ${(error as Error).message}`);
+    const errorMessage = (error as Error).message;
+    
+    // Show error with retry option for mobile devices
+    const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      showError(`AR setup failed: ${errorMessage}. Try manually enabling AR below.`);
+      showManualARButton();
+    } else {
+      showError(`AR not available: ${errorMessage}`);
+    }
     
     // Fallback to 3D preview mode
     initFallbackMode();
@@ -278,11 +296,66 @@ function showError(message: string) {
     errorEl.textContent = message;
     errorEl.style.display = 'block';
     
-    // Auto-hide after 5 seconds
+    // Auto-hide after 10 seconds (longer for manual AR button)
     setTimeout(() => {
       errorEl.style.display = 'none';
-    }, 5000);
+    }, 10000);
   }
+}
+
+/**
+ * Show manual AR enable button for mobile devices
+ */
+function showManualARButton() {
+  // Create a "Try AR" button for mobile users
+  const tryARBtn = document.createElement('button');
+  tryARBtn.textContent = '🔄 Try AR Again';
+  tryARBtn.style.cssText = `
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: #ff6b35;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 1000;
+  `;
+  
+  tryARBtn.addEventListener('click', async () => {
+    tryARBtn.remove();
+    console.log('Manual AR initialization attempt...');
+    
+    // Try to initialize AR again with user gesture
+    try {
+      showLoading('Attempting AR initialization...');
+      
+      arEngine = new FramerlyAREngine(canvas);
+      setupAREngineCallbacks();
+      await arEngine.initialize();
+      await arEngine.start();
+      setupAREventHandlers();
+      
+      hideLoading();
+      updateStatus('AR Ready - Tap to place objects');
+    } catch (error) {
+      console.error('Manual AR initialization failed:', error);
+      showError('AR still not available. Using preview mode.');
+      hideLoading();
+    }
+  });
+  
+  document.body.appendChild(tryARBtn);
+  
+  // Remove button after 15 seconds
+  setTimeout(() => {
+    if (tryARBtn.parentNode) {
+      tryARBtn.remove();
+    }
+  }, 15000);
 }
 
 /**
