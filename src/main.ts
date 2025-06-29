@@ -17,6 +17,9 @@ const canvas = document.getElementById('renderer') as HTMLCanvasElement;
 // Global AR engine instance
 let arEngine: FramerlyAREngine;
 
+// Track current mode even without AR engine
+let currentMode: ARMode = ARMode.FRAME;
+
 /**
  * Initialize the AR engine and UI
  */
@@ -80,9 +83,15 @@ async function handleCanvasClick(x: number, y: number) {
       updateStatus('Placement failed - try again');
     }
   } else {
-    // Fallback mode - place object at center
-    updateStatus('Placed object in preview mode (AR not available)');
-    console.log('Preview mode placement at:', x, y);
+    // Fallback mode - simulate object placement
+    const currentMode = getCurrentMode();
+    updateStatus(`${currentMode} placed in preview mode at (${Math.round(x)}, ${Math.round(y)})`);
+    console.log('Preview mode placement:', { mode: currentMode, x, y });
+    
+    // Add visual feedback
+    setTimeout(() => {
+      updateStatus(`${currentMode} mode - Preview only (AR not available)`);
+    }, 2000);
   }
 }
 
@@ -160,6 +169,9 @@ function setupAREventHandlers() {
  * Set AR mode (frame or neon)
  */
 function setMode(mode: ARMode) {
+  // Update global mode tracking
+  currentMode = mode;
+  
   // Set AR engine mode if available
   if (arEngine) {
     arEngine.setMode(mode);
@@ -180,9 +192,17 @@ function setMode(mode: ARMode) {
 }
 
 /**
+ * Get current mode
+ */
+function getCurrentMode(): string {
+  return currentMode === ARMode.FRAME ? 'Frame' : 'Neon';
+}
+
+/**
  * Set fallback mode (when AR is not available)
  */
 function setFallbackMode(mode: ARMode) {
+  console.log('Setting fallback mode:', mode);
   setMode(mode);
 }
 

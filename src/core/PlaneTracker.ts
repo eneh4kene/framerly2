@@ -35,59 +35,15 @@ export class PlaneTracker {
     }
 
     try {
-      const [immersiveAr, hitTest, planeDetection, anchors] = await Promise.all([
-        navigator.xr.isSessionSupported('immersive-ar'),
-        navigator.xr.isSessionSupported('immersive-ar').then(async (supported) => {
-          if (supported && navigator.xr) {
-            // Check for hit-test feature in a temporary session
-            try {
-              const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['hit-test']
-              });
-              session.end();
-              return true;
-            } catch {
-              return false;
-            }
-          }
-          return false;
-        }),
-        navigator.xr.isSessionSupported('immersive-ar').then(async (supported) => {
-          if (supported && navigator.xr) {
-            try {
-              const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['plane-detection']
-              });
-              session.end();
-              return true;
-            } catch {
-              return false;
-            }
-          }
-          return false;
-        }),
-        navigator.xr.isSessionSupported('immersive-ar').then(async (supported) => {
-          if (supported && navigator.xr) {
-            try {
-              const session = await navigator.xr.requestSession('immersive-ar', {
-                optionalFeatures: ['anchors']
-              });
-              session.end();
-              return true;
-            } catch {
-              return false;
-            }
-          }
-          return false;
-        })
-      ]);
-
+      // Only check basic session support, don't create actual sessions
+      const immersiveAr = await navigator.xr.isSessionSupported('immersive-ar');
+      
       return {
         supported: true,
         immersiveAr,
-        hitTest,
-        planeDetection,
-        anchors
+        hitTest: immersiveAr, // Assume hit-test is available if AR is supported
+        planeDetection: immersiveAr, // Assume plane detection is available if AR is supported
+        anchors: false // Anchors are optional and not critical
       };
     } catch (error) {
       console.warn('Error checking WebXR support:', error);
