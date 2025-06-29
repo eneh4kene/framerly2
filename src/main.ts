@@ -21,18 +21,17 @@ let arEngine: FramerlyAREngine;
  * Initialize the AR engine and UI
  */
 async function init() {
+  // Always setup UI handlers first
+  setupBasicUIEventHandlers();
+
   try {
     showLoading('Checking AR support...');
     
     // Check WebXR support
     const support = await FramerlyAREngine.checkSupport();
     
-    if (!support.supported) {
-      throw new Error('WebXR is not supported on this device');
-    }
-    
-    if (!support.immersiveAr) {
-      throw new Error('AR mode is not supported on this device');
+    if (!support.supported || !support.immersiveAr) {
+      throw new Error('WebXR AR is not supported on this device');
     }
 
     showLoading('Initializing AR engine...');
@@ -40,9 +39,8 @@ async function init() {
     // Initialize AR engine
     arEngine = new FramerlyAREngine(canvas);
     
-    // Setup event handlers
-    setupAREventHandlers();
-    setupUIEventHandlers();
+    // Setup AR engine callbacks
+    setupAREngineCallbacks();
     
     // Initialize the engine
     await arEngine.initialize();
@@ -56,18 +54,44 @@ async function init() {
     updateStatus('AR Ready - Tap to place objects');
     
   } catch (error) {
-    console.error('Initialization failed:', error);
-    showError(`Failed to initialize AR: ${(error as Error).message}`);
+    console.error('AR initialization failed:', error);
+    showError(`AR not available: ${(error as Error).message}`);
     
-    // Fallback: try to show a basic 3D preview mode
+    // Fallback to 3D preview mode
     initFallbackMode();
+  }
+}
+
+/**
+ * Handle canvas click for object placement
+ */
+async function handleCanvasClick(x: number, y: number) {
+  if (arEngine) {
+    // AR mode - use hit testing
+    try {
+      const objectId = await arEngine.handleTap(x, y);
+      if (objectId) {
+        console.log('Object placed with ID:', objectId);
+      } else {
+        updateStatus('No surface detected - try moving around');
+      }
+    } catch (error) {
+      console.warn('Placement failed:', error);
+      updateStatus('Placement failed - try again');
+    }
+  } else {
+    // Fallback mode - place object at center
+    updateStatus('Placed object in preview mode (AR not available)');
+    console.log('Preview mode placement at:', x, y);
   }
 }
 
 /**
  * Setup AR engine event handlers
  */
-function setupAREventHandlers() {
+function setupAREngineCallbacks() {
+  if (!arEngine) return;
+  
   arEngine.onTrackingStateChanged((state: TrackingState) => {
     updateTrackingStatus(state);
   });
@@ -89,9 +113,9 @@ function setupAREventHandlers() {
 }
 
 /**
- * Setup UI event handlers
+ * Setup basic UI event handlers (always available)
  */
-function setupUIEventHandlers() {
+function setupBasicUIEventHandlers() {
   // Mode toggle buttons
   frameModeBtn.addEventListener('click', () => {
     setMode(ARMode.FRAME);
@@ -103,30 +127,23 @@ function setupUIEventHandlers() {
   
   // Canvas tap for placement
   canvas.addEventListener('click', async (event) => {
-    if (!arEngine) return;
-    
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    try {
-      const objectId = await arEngine.handleTap(x, y);
-      if (objectId) {
-        console.log('Object placed with ID:', objectId);
-      } else {
-        updateStatus('No surface detected - try moving around');
-      }
-    } catch (error) {
-      console.warn('Placement failed:', error);
-      updateStatus('Placement failed - try again');
-    }
+    await handleCanvasClick(x, y);
   });
   
   // Handle window resize
   window.addEventListener('resize', () => {
     // Canvas resize is handled by the renderer
   });
-  
+}
+
+/**
+ * Setup AR-specific event handlers
+ */
+function setupAREventHandlers() {
   // Handle visibility change (pause/resume AR)
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
@@ -143,20 +160,30 @@ function setupUIEventHandlers() {
  * Set AR mode (frame or neon)
  */
 function setMode(mode: ARMode) {
-  if (!arEngine) return;
+  // Set AR engine mode if available
+  if (arEngine) {
+    arEngine.setMode(mode);
+  }
   
-  arEngine.setMode(mode);
-  
-  // Update UI
+  // Always update UI
   if (mode === ARMode.FRAME) {
     frameModeBtn.classList.add('active');
     neonModeBtn.classList.remove('active');
-    updateStatus('Frame mode - Tap to place artwork');
+    const message = arEngine ? 'Frame mode - Tap to place artwork' : 'Frame mode - Preview only (AR not available)';
+    updateStatus(message);
   } else {
     neonModeBtn.classList.add('active');
     frameModeBtn.classList.remove('active');
-    updateStatus('Neon mode - Tap to place neon sign');
+    const message = arEngine ? 'Neon mode - Tap to place neon sign' : 'Neon mode - Preview only (AR not available)';
+    updateStatus(message);
   }
+}
+
+/**
+ * Set fallback mode (when AR is not available)
+ */
+function setFallbackMode(mode: ARMode) {
+  setMode(mode);
 }
 
 /**
@@ -242,22 +269,12 @@ function initFallbackMode() {
   hideLoading();
   updateStatus('AR not available - Using 3D preview mode');
   
-  // Initialize basic 3D renderer without AR
-  try {
-    arEngine = new FramerlyAREngine(canvas, {
-      rendering: {
-        shadowsEnabled: false,
-        environmentLighting: false,
-        adaptiveQuality: true
-      }
-    });
-    
-    setupUIEventHandlers();
-    updateStatus('3D Preview mode - Click to place objects');
-    
-  } catch (error) {
-    showError('Failed to initialize 3D preview mode');
-  }
+  // For fallback mode, we don't need AR engine initialization
+  // The UI handlers are already set up and will work in preview mode
+  updateStatus('3D Preview mode - Click buttons to switch modes');
+  
+  // Set default mode
+  setFallbackMode(ARMode.FRAME);
 }
 
 /**
