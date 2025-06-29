@@ -53,6 +53,9 @@ async function init() {
     // Start AR session
     await arEngine.start();
     
+    // Setup AR-specific event handlers (pause/resume)
+    setupAREventHandlers();
+    
     hideLoading();
     updateStatus('AR Ready - Tap to place objects');
     
