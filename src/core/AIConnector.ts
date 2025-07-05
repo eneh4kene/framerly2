@@ -9,7 +9,7 @@ import {
   NeonRecommendation,
   FrameData,
   NeonData
-} from '@/types';
+} from '../types';
 
 export interface APIConfig {
   baseUrl: string;

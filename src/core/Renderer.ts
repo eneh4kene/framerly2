@@ -25,14 +25,14 @@ import {
   ACESFilmicToneMapping
 } from 'three';
 
-import { ARMode, FrameData, NeonData, AREngineConfig } from '@/types';
+import { ARMode, FrameData, NeonData, AREngineConfig } from '../types';
 import { 
   neonVertexShader, 
   neonFragmentShader, 
   neonHaloVertexShader, 
   neonHaloFragmentShader,
   neonPresets 
-} from '@/shaders/neonGlow';
+} from '../shaders/neonGlow';
 
 export class Renderer {
   private renderer: WebGLRenderer;

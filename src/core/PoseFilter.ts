@@ -3,7 +3,7 @@
  */
 
 import { Vector3, Quaternion } from 'three';
-import { PoseFilterOptions } from '@/types';
+import { PoseFilterOptions } from '../types';
 
 export class PoseFilter {
   private options: PoseFilterOptions;

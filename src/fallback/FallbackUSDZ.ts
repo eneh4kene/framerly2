@@ -2,7 +2,7 @@
  * FallbackUSDZ - iOS Safari USDZ AR Quick Look fallback for WebXR unsupported devices
  */
 
-import { FrameData, NeonData, ARMode } from '@/types';
+import { FrameData, NeonData, ARMode } from '../types';
 
 export class FallbackUSDZ {
   private static isIOSSafari(): boolean {

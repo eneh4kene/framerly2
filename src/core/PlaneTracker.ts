@@ -3,7 +3,7 @@
  */
 
 import { Vector3, Quaternion, Matrix4 } from 'three';
-import { PlaneData, TrackingState, WebXRSupport } from '@/types';
+import { PlaneData, TrackingState, WebXRSupport } from '../types';
 import { PoseFilter } from './PoseFilter';
 
 export class PlaneTracker {
@@ -116,14 +116,17 @@ export class PlaneTracker {
     if (!this.xrSession || !this.xrRefSpace) return;
 
     try {
-      if (this.xrSession) {
+      // Check if hit test is supported
+      if ('requestHitTestSource' in this.xrSession) {
         this.hitTestSource = await (this.xrSession as any).requestHitTestSource({
           space: this.xrRefSpace
         });
         console.log('Hit test source initialized');
+      } else {
+        console.warn('Hit test not supported on this device');
       }
     } catch (error) {
-      console.warn('Hit test not supported, using fallback plane detection');
+      console.warn('Hit test not supported, using fallback plane detection:', error);
     }
   }
 
@@ -153,12 +156,13 @@ export class PlaneTracker {
    * Update detected planes from WebXR
    */
   private updatePlaneDetection(frame: XRFrame): void {
-    // @ts-ignore - WebXR plane detection API
-    const detectedPlanes = frame.detectedPlanes;
-    
-    if (!detectedPlanes) return;
+    try {
+      // @ts-ignore - WebXR plane detection API
+      const detectedPlanes = frame.detectedPlanes;
+      
+      if (!detectedPlanes) return;
 
-    detectedPlanes.forEach((xrPlane: any) => {
+      detectedPlanes.forEach((xrPlane: any) => {
       const planeId = xrPlane.planeId || `plane_${Date.now()}_${Math.random()}`;
       
       // Get plane pose
@@ -205,6 +209,9 @@ export class PlaneTracker {
 
     // Clean up old planes
     this.cleanupOldPlanes();
+    } catch (error) {
+      console.warn('Error in plane detection:', error);
+    }
   }
 
   /**

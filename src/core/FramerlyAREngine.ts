@@ -15,7 +15,7 @@ import {
   PlaneData,
   WebXRSupport,
   CameraPermissionState
-} from '@/types';
+} from '../types';
 
 export class FramerlyAREngine {
   private planeTracker: PlaneTracker;
@@ -222,11 +222,22 @@ export class FramerlyAREngine {
     if (!session) return null;
 
     try {
-      // Get current frame
-      const frame = session.requestAnimationFrame(() => {});
+      // Store the position for the next frame
+      let hitPosition: Vector3 | null = null;
       
-      // Perform hit test
-      const hitPosition = await this.planeTracker.hitTest(x, y, frame as any);
+      // Get hit test result on next frame
+      const frameCallback = async (_time: number, frame: XRFrame) => {
+        hitPosition = await this.planeTracker.hitTest(x, y, frame);
+      };
+      
+      // Request animation frame to get the current frame
+      await new Promise<void>((resolve) => {
+        session.requestAnimationFrame(async (time, frame) => {
+          await frameCallback(time, frame);
+          resolve();
+        });
+      });
+      
       if (hitPosition) {
         return await this.placeObject(hitPosition);
       }
